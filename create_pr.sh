@@ -106,21 +106,19 @@ echo -e "${BLUE}6️⃣  Creating pull request...${NC}"
 
 # Build PR body with proper JSON escaping
 PR_BODY=$(cat <<EOF
-## Jira Ticket
-[$TICKET_ID]($JIRA_BASE_URL/browse/$TICKET_ID)
+## Ticket - [$TICKET_ID]($JIRA_BASE_URL/browse/$TICKET_ID)
 
 ## Summary
 $SUMMARY
 
-## Description
-${DESCRIPTION:-No description provided}
-
 ## Changes
 ${AI_CHANGES_DESCRIPTION:-No changes description provided}
 
-## Status
+## Jira information
 - **Status**: $STATUS
 - **Priority**: $PRIORITY
+
+${DESCRIPTION:-No description provided}
 EOF
 )
 
