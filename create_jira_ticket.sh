@@ -67,50 +67,48 @@ fi
 
 echo ""
 
-# Step 3: Collect ticket details
-echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}📋 Please provide Jira ticket details:${NC}"
-echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
+# Step 3: Get ticket details from arguments or git history
+echo -e "${BLUE}3️⃣  Collecting ticket details...${NC}"
 
-# Get ticket title
-read -p "$(echo -e ${CYAN}Enter ticket title: ${NC})" JIRA_TITLE
+JIRA_TITLE="${1:-}"
+JIRA_DESCRIPTION="${2:-}"
+
+# If title not provided as argument, derive from commit messages on current branch
 if [ -z "$JIRA_TITLE" ]; then
-    echo -e "${RED}❌ Error: Title is required${NC}"
+    # Get the first commit message on this branch (relative to dev/main)
+    BASE_BRANCH=$(git merge-base HEAD dev 2>/dev/null || git merge-base HEAD main 2>/dev/null || echo "")
+    if [ -n "$BASE_BRANCH" ]; then
+        JIRA_TITLE=$(git log --format="%s" "$BASE_BRANCH..HEAD" | tail -1)
+    fi
+    # Fallback to latest commit message
+    if [ -z "$JIRA_TITLE" ]; then
+        JIRA_TITLE=$(git log -1 --format="%s")
+    fi
+fi
+
+if [ -z "$JIRA_TITLE" ]; then
+    echo -e "${RED}❌ Error: Could not determine ticket title from commits. Pass it as first argument.${NC}"
     exit 1
 fi
 
-echo ""
-
-# Get ticket description
-echo -e "${CYAN}Enter ticket description (press Enter twice to finish):${NC}"
-JIRA_DESCRIPTION=""
-while IFS= read -r line; do
-    [ -z "$line" ] && break
-    JIRA_DESCRIPTION="$JIRA_DESCRIPTION$line\n"
-done
-
+# If description not provided, derive from commit log and changed files
 if [ -z "$JIRA_DESCRIPTION" ]; then
-    JIRA_DESCRIPTION="Created via create_jira_ticket.sh"
+    BASE_BRANCH=$(git merge-base HEAD dev 2>/dev/null || git merge-base HEAD main 2>/dev/null || echo "")
+    if [ -n "$BASE_BRANCH" ]; then
+        COMMIT_LOG=$(git log --format="- %s" "$BASE_BRANCH..HEAD" 2>/dev/null)
+        CHANGED_FILES=$(git diff --name-only "$BASE_BRANCH..HEAD" 2>/dev/null | sed 's/^/- /')
+    else
+        COMMIT_LOG=$(git log -5 --format="- %s" 2>/dev/null)
+        CHANGED_FILES=$(git diff --name-only HEAD~1 2>/dev/null | sed 's/^/- /' || echo "")
+    fi
+    JIRA_DESCRIPTION="Commits:\\n${COMMIT_LOG}\\n\\nChanged files:\\n${CHANGED_FILES}"
 fi
 
+echo -e "   Title: $JIRA_TITLE"
+echo -e "   Type: Task (default)"
 echo ""
 
-# Get issue type
-echo -e "${CYAN}Select issue type:${NC}"
-echo "  1) Task (default)"
-echo "  2) Bug"
-echo "  3) Story"
-echo "  4) Epic"
-read -p "$(echo -e ${CYAN}Enter choice [1-4]: ${NC})" ISSUE_TYPE_CHOICE
-
-case $ISSUE_TYPE_CHOICE in
-    2) ISSUE_TYPE="Bug" ;;
-    3) ISSUE_TYPE="Story" ;;
-    4) ISSUE_TYPE="Epic" ;;
-    *) ISSUE_TYPE="Task" ;;
-esac
-
-echo ""
+ISSUE_TYPE="Task"
 
 # Step 4: Create Jira ticket
 echo -e "${BLUE}3️⃣  Creating Jira ticket...${NC}"
@@ -172,19 +170,12 @@ if [ -n "$NEW_TICKET_ID" ]; then
     echo -e "${GREEN}   ✓ Jira ticket created: $NEW_TICKET_ID${NC}"
     echo -e "   URL: $JIRA_BASE_URL/browse/$NEW_TICKET_ID\n"
 
-    # Ask if user wants to rename the branch
+    # Auto-rename branch to include ticket ID
     if [[ ! $BRANCH =~ features/(KAN-[0-9]+) ]]; then
-        echo -e "${YELLOW}⚠️  Your branch name doesn't include the ticket ID.${NC}"
-        read -p "$(echo -e ${CYAN}Would you like to rename the branch to features/$NEW_TICKET_ID? [y/N]: ${NC})" RENAME_BRANCH
-
-        if [[ "$RENAME_BRANCH" =~ ^[Yy]$ ]]; then
-            NEW_BRANCH="features/$NEW_TICKET_ID"
-            git branch -m "$BRANCH" "$NEW_BRANCH"
-            BRANCH="$NEW_BRANCH"
-            echo -e "${GREEN}   ✓ Branch renamed to $NEW_BRANCH${NC}\n"
-        else
-            echo -e "${YELLOW}   Keeping current branch name: $BRANCH${NC}\n"
-        fi
+        NEW_BRANCH="features/$NEW_TICKET_ID"
+        git branch -m "$BRANCH" "$NEW_BRANCH"
+        BRANCH="$NEW_BRANCH"
+        echo -e "${GREEN}   ✓ Branch renamed to $NEW_BRANCH${NC}\n"
     fi
 
     # Summary
