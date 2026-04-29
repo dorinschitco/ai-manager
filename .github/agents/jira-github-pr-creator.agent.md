@@ -61,7 +61,6 @@ The script handles:
   - Description
   - Issue type (Task, Bug, Story, Epic)
 - Creates Jira ticket
-- Optionally renames branch to include ticket ID
 
 ### 3. Create Both Jira Ticket and PR
 When the user says "create PR and Jira ticket" or "create Jira ticket and PR", run both scripts in sequence:
