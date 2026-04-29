@@ -48,25 +48,40 @@ The script handles:
 - Creates GitHub PR to `dev` branch with the changes description included in the PR body
 
 ### 2. Create Jira Ticket Only (`create_jira_ticket.sh`)
-Run when the user wants to create a Jira ticket:
+Run when the user wants to create a Jira ticket.
+
+**First, analyze the commits** on the current branch:
 
 ```bash
-bash create_jira_ticket.sh
+git log dev..HEAD --pretty=format:"%h %s" --no-merges
 ```
+
+And inspect the actual changes:
+
+```bash
+git diff dev..HEAD --stat
+```
+
+Then generate a concise title summarizing the work, and a description that includes the commit messages and changed files. Pass these as arguments:
+
+```bash
+bash create_jira_ticket.sh "AI-generated title" "AI-generated description"
+```
+
+The script accepts:
+- First argument: ticket title (if omitted, derived from commits automatically)
+- Second argument: ticket description (if omitted, derived from commits and changed files automatically)
 
 The script handles:
 - Validates branch format (`features/...`)
-- Prompts user for ticket details:
-  - Title (required)
-  - Description
-  - Issue type (Task, Bug, Story, Epic)
-- Creates Jira ticket
+- Creates Jira ticket with type "Task"
+- Auto-renames branch to include the new ticket ID
 
 ### 3. Create Both Jira Ticket and PR
 When the user says "create PR and Jira ticket" or "create Jira ticket and PR", run both scripts in sequence:
 
 ```bash
-bash create_jira_ticket.sh && bash create_pr.sh "AI-generated changes description"
+bash create_jira_ticket.sh "AI-generated title" "AI-generated description" && bash create_pr.sh "AI-generated changes description"
 ```
 
 This workflow:
