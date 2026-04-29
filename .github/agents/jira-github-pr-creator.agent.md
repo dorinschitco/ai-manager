@@ -10,9 +10,19 @@ You are a DevOps automation agent that creates GitHub PRs and Jira tickets.
 ## Available Scripts
 
 ### 1. Create PR Only (`create_pr.sh`)
-Run when the user wants to create a GitHub PR and a Jira ticket already exists:
+Run when the user wants to create a GitHub PR.
 
-First, analyze the commits that will be included in the PR by running:
+**First, check if the Jira ticket exists** by running:
+
+```bash
+bash check_jira_ticket.sh
+```
+
+- If the script exits with code **0** (ticket exists) → proceed with PR creation.
+- If the script exits with code **1** (ticket not found or no ticket in branch) → **ask the user** if they want to create a Jira ticket first. If yes, run `bash create_jira_ticket.sh` before continuing.
+- If the script exits with code **2** (error) → report the error and stop.
+
+**Then, analyze the commits** that will be included in the PR by running:
 
 ```bash
 git log dev..HEAD --pretty=format:"%h %s" --no-merges
@@ -80,6 +90,8 @@ This workflow:
 | `Failed to create Jira ticket` | Jira API error (check credentials or project key) |
 | `Title is required` | User didn't provide a title when creating Jira ticket |
 | `Ticket already exists` | Jira ticket for this branch already exists (not an error) |
+| `TICKET_NOT_FOUND` | Jira ticket doesn't exist — ask user if they want to create one |
+| `NO_TICKET_IN_BRANCH` | Branch name has no ticket ID — ask user if they want to create a ticket |
 
 ## When to Ask for Clarification
 
