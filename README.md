@@ -4,8 +4,9 @@ A CLI toolkit that automates the workflow between **Jira** and **GitHub** — cr
 
 ## Features
 
-- 🎫 **Create Jira Tickets** — Interactively create Jira tickets and automatically rename your branch to include the ticket ID.
-- 🚀 **Create Pull Requests** — Push your branch, fetch Jira ticket details, and open a GitHub PR with a rich description linking back to Jira.
+- 🎫 **Create Jira Tickets** — Automatically creates Jira tickets with title and description derived from your git history, then renames your branch to include the ticket ID.
+- 🚀 **Create Pull Requests** — Push your branch, fetch Jira ticket details, and open a GitHub PR targeting `dev` with a rich description linking back to Jira.
+- 🔍 **Check Jira Tickets** — Verify whether a Jira ticket exists for the current branch.
 
 ## Prerequisites
 
@@ -29,32 +30,51 @@ JIRA_PROJECT_KEY=KAN
 ### Create a Jira Ticket
 
 ```bash
-./create_jira_ticket.sh
+./create_jira_ticket.sh [title] [description]
 ```
 
 Run this from a branch named `features/{feature-name}`. The script will:
 
-1. Prompt you for a title, description, issue type, and priority.
-2. Create the ticket in Jira.
-3. Rename your branch to `features/KAN-{id}-{feature-name}`.
+1. Check if the branch already has a linked Jira ticket (skips creation if it exists).
+2. Auto-derive the ticket title from your git commit messages (or use the optional argument).
+3. Auto-derive the description from commit log and changed files (or use the optional argument).
+4. Create the ticket in Jira as a **Task**.
+5. Rename your branch to `features/KAN-{id}`.
 
 ### Create a Pull Request
 
 ```bash
-./create_pr.sh
+./create_pr.sh [changes_description]
 ```
 
 Run this from a branch named `features/KAN-{id}-...`. The script will:
 
 1. Push the branch to GitHub.
-2. Fetch the linked Jira ticket details (title, status, priority).
-3. Create a GitHub PR with a formatted description and a link to the Jira ticket.
+2. Fetch the linked Jira ticket details (title, status, priority, description).
+3. Create a GitHub PR targeting `dev` with a formatted body including:
+   - A link to the Jira ticket.
+   - An optional AI-generated changes summary (passed as the first argument).
+   - Jira metadata (status, priority, description).
+
+### Check a Jira Ticket
+
+```bash
+./check_jira_ticket.sh
+```
+
+Run this from a branch named `features/KAN-{id}-...`. The script will:
+
+1. Extract the ticket ID from the branch name.
+2. Query Jira to verify the ticket exists.
+3. Print ticket title and status, or report if not found.
+
+Exit codes: `0` = ticket exists, `1` = not found / no ticket in branch, `2` = error.
 
 ## Branch Naming Convention
 
 ```
 features/{feature-name}          # before ticket creation
-features/KAN-123-{feature-name}  # after ticket creation
+features/KAN-123                 # after ticket creation
 ```
 
 ## License
