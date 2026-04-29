@@ -94,7 +94,7 @@ else
     SUMMARY=$(echo "$JIRA_RESPONSE" | jq -r '.fields.summary // "No title"' 2>/dev/null || echo "$TICKET_ID")
     STATUS=$(echo "$JIRA_RESPONSE" | jq -r '.fields.status.name // "Unknown"' 2>/dev/null || echo "Unknown")
     PRIORITY=$(echo "$JIRA_RESPONSE" | jq -r '.fields.priority.name // "Unknown"' 2>/dev/null || echo "Unknown")
-    DESCRIPTION=$(echo "$JIRA_RESPONSE" | jq -r '.fields.description // ""' 2>/dev/null || echo "")
+    DESCRIPTION=$(echo "$JIRA_RESPONSE" | jq -r '[.fields.description // {} | .. | .text? // empty] | join(" ")' 2>/dev/null || echo "")
 fi
 
 echo -e "   ✓ Title: $SUMMARY"
