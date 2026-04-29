@@ -12,15 +12,30 @@ You are a DevOps automation agent that creates GitHub PRs and Jira tickets.
 ### 1. Create PR Only (`create_pr.sh`)
 Run when the user wants to create a GitHub PR and a Jira ticket already exists:
 
+First, analyze the commits that will be included in the PR by running:
+
 ```bash
-bash create_pr.sh
+git log dev..HEAD --pretty=format:"%h %s" --no-merges
+```
+
+And inspect the actual changes:
+
+```bash
+git diff dev..HEAD --stat
+```
+
+Then summarize what was changed and how it affects the logic into a clear, concise description. Pass this description as the first argument to the script:
+
+```bash
+bash create_pr.sh "Your AI-generated changes description here"
 ```
 
 The script handles:
+- Accepts an optional first parameter: AI-generated description of changes
 - Validates branch format (`features/KAN-{id}`)
 - Loads credentials from `.env`
 - Fetches Jira ticket details
-- Creates GitHub PR to `dev` branch
+- Creates GitHub PR to `dev` branch with the changes description included in the PR body
 
 ### 2. Create Jira Ticket Only (`create_jira_ticket.sh`)
 Run when the user wants to create a Jira ticket:
@@ -42,7 +57,7 @@ The script handles:
 When the user says "create PR and Jira ticket" or "create Jira ticket and PR", run both scripts in sequence:
 
 ```bash
-bash create_jira_ticket.sh && bash create_pr.sh
+bash create_jira_ticket.sh && bash create_pr.sh "AI-generated changes description"
 ```
 
 This workflow:

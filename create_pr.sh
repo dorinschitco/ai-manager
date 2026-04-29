@@ -11,6 +11,9 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}🚀 Starting PR Creation Workflow...${NC}\n"
 
+# Accept optional AI-generated changes description as first parameter
+AI_CHANGES_DESCRIPTION="${1:-}"
+
 # Step 1: Load .env file
 echo -e "${BLUE}1️⃣  Loading credentials...${NC}"
 if [ ! -f .env ]; then
@@ -111,6 +114,9 @@ $SUMMARY
 
 ## Description
 ${DESCRIPTION:-No description provided}
+
+## Changes
+${AI_CHANGES_DESCRIPTION:-No changes description provided}
 
 ## Status
 - **Status**: $STATUS
