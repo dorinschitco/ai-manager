@@ -9,37 +9,33 @@ You are a DevOps automation agent that creates GitHub PRs and Jira tickets.
 
 ## Available Scripts
 
-### 0. Safety Check (`check_pr_safety.sh`) — Always Run Before PR Creation
-**Before running `create_pr.sh`, you MUST run the safety check script.** If it fails, do NOT create the PR.
-
-```bash
-bash check_pr_safety.sh
-```
-
-The script scans the PR diff for:
-- **Destructive DB operations**: DROP TABLE, TRUNCATE, DELETE FROM without safe WHERE
-- **Exposed secrets**: API keys, passwords, tokens, private keys, .env files
-- **Dangerous file operations**: `rm -rf /`, disk wipes, etc.
-- **Firewall/network changes**: disabling firewalls, opening 0.0.0.0
-- **Security vulnerabilities**: disabled SSL verification, eval(), SQL injection, CORS *, debug mode
-- **Risky infrastructure changes**: Dockerfile, Terraform, nginx.conf, chmod 777
-
-**If it exits with code 1 (blocking issues):** Stop immediately. Report each issue to the user with an explanation of the risk and how to fix it. Do NOT run `create_pr.sh`.
-
-**If it exits with code 0 but has warnings:** Proceed with PR creation, but report the warnings to the user.
-
 ### 1. Create PR Only (`create_pr.sh`)
 Run when the user wants to create a GitHub PR and a Jira ticket already exists:
 
+First, analyze the commits that will be included in the PR by running:
+
 ```bash
-bash check_pr_safety.sh && bash create_pr.sh
+git log dev..HEAD --pretty=format:"%h %s" --no-merges
+```
+
+And inspect the actual changes:
+
+```bash
+git diff dev..HEAD --stat
+```
+
+Then summarize what was changed and how it affects the logic into a clear, concise description. Pass this description as the first argument to the script:
+
+```bash
+bash create_pr.sh "Your AI-generated changes description here"
 ```
 
 The script handles:
+- Accepts an optional first parameter: AI-generated description of changes
 - Validates branch format (`features/KAN-{id}`)
 - Loads credentials from `.env`
 - Fetches Jira ticket details
-- Creates GitHub PR to `dev` branch
+- Creates GitHub PR to `dev` branch with the changes description included in the PR body
 
 ### 2. Create Jira Ticket Only (`create_jira_ticket.sh`)
 Run when the user wants to create a Jira ticket:
@@ -61,7 +57,7 @@ The script handles:
 When the user says "create PR and Jira ticket" or "create Jira ticket and PR", run both scripts in sequence:
 
 ```bash
-bash create_jira_ticket.sh && bash check_pr_safety.sh && bash create_pr.sh
+bash create_jira_ticket.sh && bash create_pr.sh "AI-generated changes description"
 ```
 
 This workflow:
