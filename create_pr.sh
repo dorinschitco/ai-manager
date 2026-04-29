@@ -109,9 +109,6 @@ PR_BODY=$(cat <<EOF
 ## Ticket: [$TICKET_ID]($JIRA_BASE_URL/browse/$TICKET_ID)
 
 ## Summary
-$SUMMARY
-
-## Changes
 ${AI_CHANGES_DESCRIPTION:-No changes description provided}
 
 ## Jira information
