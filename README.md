@@ -25,6 +25,8 @@ JIRA_API_TOKEN=your_jira_api_token
 JIRA_PROJECT_KEY=KAN
 ```
 
+> **Note:** `create_jira_ticket.sh` and `check_jira_ticket.sh` only require the Jira variables. `create_pr.sh` requires all variables.
+
 ## Usage
 
 ### Create a Jira Ticket
@@ -36,8 +38,8 @@ JIRA_PROJECT_KEY=KAN
 Run this from a branch named `features/{feature-name}`. The script will:
 
 1. Check if the branch already has a linked Jira ticket (skips creation if it exists).
-2. Auto-derive the ticket title from your git commit messages (or use the optional argument).
-3. Auto-derive the description from commit log and changed files (or use the optional argument).
+2. Auto-derive the ticket title from git commits on the branch relative to `dev`/`main` (or use the optional `title` argument).
+3. Auto-derive the description from the commit log and changed files (or use the optional `description` argument).
 4. Create the ticket in Jira as a **Task**.
 5. Rename your branch to `features/KAN-{id}`.
 
@@ -47,14 +49,19 @@ Run this from a branch named `features/{feature-name}`. The script will:
 ./create_pr.sh [changes_description]
 ```
 
-Run this from a branch named `features/KAN-{id}-...`. The script will:
+Run this from a branch named `features/KAN-{id}` (or `features/KAN-{id}-...`). The script will:
 
 1. Push the branch to GitHub.
-2. Fetch the linked Jira ticket details (title, status, priority, description).
-3. Create a GitHub PR targeting `dev` with a formatted body including:
-   - A link to the Jira ticket.
-   - An optional AI-generated changes summary (passed as the first argument).
-   - Jira metadata (status, priority, description).
+2. Auto-detect the repository name from the git remote.
+3. Fetch the linked Jira ticket details (title, status, priority, description).
+4. Create a GitHub PR targeting `dev` with:
+   - **Title**: `[KAN-{id}] {Jira ticket summary}`
+   - **Body** including:
+     - A link to the Jira ticket.
+     - A summary section with the optional `changes_description` argument.
+     - Jira metadata (status, priority, description).
+
+If a PR for the branch already exists, the script will report it and exit.
 
 ### Check a Jira Ticket
 
@@ -62,13 +69,19 @@ Run this from a branch named `features/KAN-{id}-...`. The script will:
 ./check_jira_ticket.sh
 ```
 
-Run this from a branch named `features/KAN-{id}-...`. The script will:
+Run this from a branch named `features/KAN-{id}` (or `features/KAN-{id}-...`). The script will:
 
 1. Extract the ticket ID from the branch name.
 2. Query Jira to verify the ticket exists.
 3. Print ticket title and status, or report if not found.
 
-Exit codes: `0` = ticket exists, `1` = not found / no ticket in branch, `2` = error.
+Exit codes:
+
+| Code | Meaning |
+|------|---------|
+| `0`  | Ticket exists |
+| `1`  | Not found or no ticket ID in branch name |
+| `2`  | Error (missing `.env`, missing credentials, etc.) |
 
 ## Branch Naming Convention
 
