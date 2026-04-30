@@ -90,6 +90,8 @@ features/{feature-name}          # before ticket creation
 features/KAN-123                 # after ticket creation
 ```
 
+version 1.0.1
+
 ## License
 
 MIT
